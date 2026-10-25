@@ -33,7 +33,7 @@ export function EnvironmentLighting({
     pmrem.compileEquirectangularShader();
     const target = pmrem.fromEquirectangular(equirect);
     scene.environment = target.texture;
-    scene.environmentIntensity = profile.quality === "low" ? 0.5 : 0.64;
+    scene.environmentIntensity = profile.quality === "low" ? 0.45 : 0.58;
     onEnvironment?.();
 
     return () => {
@@ -52,18 +52,18 @@ export function EnvironmentLighting({
 
   return (
     <group>
-      <fogExp2 attach="fog" args={["#a8a89a", profile.quality === "low" ? 0.002 : 0.0024]} />
+      <fogExp2 attach="fog" args={["#a3a396", profile.quality === "low" ? 0.0015 : 0.0019]} />
 
       {/* sky/ground bounce */}
-      <hemisphereLight args={["#7f95a3", "#4a4234", 0.22]} />
+      <hemisphereLight args={["#6d8899", "#3c372a", 0.14]} />
 
       {/* key light */}
       {profile.shadows ? (
         <directionalLight
           ref={sunRef}
           position={sunPosition}
-          intensity={3.9}
-          color="#ffe0bc"
+          intensity={5.4}
+          color="#ffd9ac"
           castShadow
           shadow-mapSize-width={shadowSize}
           shadow-mapSize-height={shadowSize}
@@ -81,14 +81,19 @@ export function EnvironmentLighting({
       )}
 
       {/* cool fill from the sea side, no shadow cost */}
-      <directionalLight position={[18, 16, -40]} intensity={0.6} color="#a9c4d4" />
+      <directionalLight position={[14, 19, -38]} intensity={1.15} color="#9dbdd4" />
 
-      {/* warm interior practicals: seen through glass, they carry the dusk */}
-      <pointLight position={[6.3, 3.4, -1.0]} intensity={9} distance={9} decay={2} color="#ffb877" />
-      <pointLight position={[0.4, 3.2, -2.6]} intensity={6} distance={7.5} decay={2} color="#ffbd85" />
-      <pointLight position={[8.35, 1.2, -3.2]} intensity={3.4} distance={3.6} decay={2} color="#ff8c3c" />
-      <pointLight position={[13.4, 2.3, -3.6]} intensity={3.2} distance={6.5} decay={2} color="#ffc48f" />
-      <pointLight position={[4.7, 2.85, 4.2]} intensity={2.4} distance={5.5} decay={2} color="#ffc48f" />
+      {/*
+        The interior is read almost entirely through the glass, so it is lit by
+        the small practicals themselves plus two soft interior fills. Each
+        point light costs per-fragment shading on every material, so the budget
+        is deliberately short and the rest of the warmth comes from emissive
+        geometry and the environment map.
+      */}
+      <pointLight position={[6.1, 2.5, -0.7]} intensity={5.2} distance={8.5} decay={2} color="#ffab63" />
+      <pointLight position={[0.7, 2.45, -2.3]} intensity={3.6} distance={7} decay={2} color="#ffb877" />
+      <pointLight position={[13.3, 2.25, -3.3]} intensity={2.8} distance={6} decay={2} color="#ffb877" />
+      <pointLight position={[4.7, 2.2, 3.4]} intensity={1.6} distance={4.5} decay={2} color="#ffb877" />
     </group>
   );
 }

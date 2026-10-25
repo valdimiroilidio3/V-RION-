@@ -7,6 +7,7 @@ import { oliveTree, shrubGeometry, type Vec3 } from "@/lib/geometry";
 import { createContactShadowTexture } from "@/lib/textures";
 import { Selectable } from "./Selectable";
 import { GY } from "./MainEnvironment";
+import { SUN_DIRECTION } from "./EnvironmentLighting";
 
 /* --------------------------------------------------------------------- sky */
 
@@ -28,7 +29,7 @@ const SKY_FRAG = /* glsl */ `
   void main() {
     vec3 dir = normalize(vDir);
     float h = dir.y;
-    vec3 col = mix(uHorizon, uTop, smoothstep(0.0, 0.62, h));
+    vec3 col = mix(uHorizon, uTop, smoothstep(-0.02, 0.42, h));
     col = mix(uGround, col, smoothstep(-0.09, 0.015, h));
     float d = max(dot(dir, normalize(uSun)), 0.0);
     col += uSunColor * pow(d, 900.0) * 3.2;
@@ -53,9 +54,9 @@ export function SkyDome({ sunDirection }: { sunDirection: Vec3 }) {
         depthWrite: false,
         fog: false,
         uniforms: {
-          uTop: { value: new THREE.Color("#070d14") },
-          uHorizon: { value: new THREE.Color("#bcb3a2") },
-          uGround: { value: new THREE.Color("#2e2c26") },
+          uTop: { value: new THREE.Color("#050a11") },
+          uHorizon: { value: new THREE.Color("#c9bfab") },
+          uGround: { value: new THREE.Color("#262420") },
           uSun: { value: new THREE.Vector3(...sunDirection) },
           uSunColor: { value: new THREE.Color("#ffd6a6") },
         },
@@ -211,10 +212,73 @@ function Coast({ m }: { m: SceneMaterials }) {
       {stacks.map((stack, i) => (
         <mesh key={`s${i}`} geometry={rockGeometry} material={m.rock} position={stack.p} scale={stack.s} rotation={[0.2 * i, i, 0.1]} />
       ))}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -27, -240]} material={m.sea} receiveShadow>
-        <planeGeometry args={[1600, 1600]} />
-      </mesh>
+      <Sea sunDirection={SUN_DIRECTION} />
     </group>
+  );
+}
+
+
+/* -------------------------------------------------------------------- sea */
+
+const SEA_VERT = /* glsl */ `
+  varying vec3 vWorld;
+  void main() {
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vWorld = wp.xyz;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }
+`;
+
+/*
+ * A distance-graded sea: dark, dense water close to the coast, dissolving into
+ * the colour of the horizon band by aerial perspective, with a restrained sun
+ * path on the surface. A flat dark plane read as a painted stripe; this reads
+ * as depth.
+ */
+const SEA_FRAG = /* glsl */ `
+  varying vec3 vWorld;
+  uniform vec3 uNear;
+  uniform vec3 uFar;
+  uniform vec3 uSun;
+  uniform vec3 uSunColor;
+  void main() {
+    vec3 view = cameraPosition - vWorld;
+    float dist = length(view);
+    vec3 V = normalize(view);
+    float t = pow(clamp((dist - 55.0) / 420.0, 0.0, 1.0), 0.7);
+    vec3 col = mix(uNear, uFar, t);
+    vec3 N = vec3(0.0, 1.0, 0.0);
+    vec3 H = normalize(normalize(uSun) + V);
+    float spec = pow(max(dot(N, H), 0.0), 260.0);
+    float sheen = pow(max(dot(N, H), 0.0), 18.0);
+    col += uSunColor * (spec * 1.15 + sheen * 0.09) * (1.0 - t * 0.55);
+    gl_FragColor = vec4(col, 1.0);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+  }
+`;
+
+function Sea({ sunDirection }: { sunDirection: Vec3 }) {
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: SEA_VERT,
+        fragmentShader: SEA_FRAG,
+        fog: false,
+        uniforms: {
+          uNear: { value: new THREE.Color("#08131a") },
+          uFar: { value: new THREE.Color("#b3ac9c") },
+          uSun: { value: new THREE.Vector3(...sunDirection) },
+          uSunColor: { value: new THREE.Color("#ffd7a8") },
+        },
+      }),
+    [sunDirection],
+  );
+
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, -27, -240]} material={material} frustumCulled={false}>
+      <planeGeometry args={[1600, 1600]} />
+    </mesh>
   );
 }
 
@@ -317,7 +381,7 @@ export function SceneLandscape({
       <Coast m={m} />
       <ContactShadow />
       <Selectable id="coast">
-        <Tree position={[-9.6, GY - 0.1, 2.2]} scale={1.3} seed={41} m={m} detail={quality === "low" ? 1 : 2} />
+        <Tree position={[-9.6, GY - 0.1, 2.2]} scale={1.3} seed={41} m={m} detail={quality === "high" ? 3 : quality === "medium" ? 2 : 1} />
         <Tree position={[19.4, GY - 0.1, 7.4]} scale={1.1} seed={63} m={m} detail={1} />
         {quality !== "low" ? (
           <Tree position={[-14.6, GY - 0.2, -6.4]} scale={0.95} seed={77} m={m} detail={1} />

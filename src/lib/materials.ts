@@ -4,6 +4,7 @@ import {
   concreteMaterialMaps,
   fabricMaps,
   gravelMaps,
+  createGrassTuftTexture,
   travertineMaps,
   woodMaterialMaps,
 } from "./textures";
@@ -53,6 +54,7 @@ export interface SceneMaterials {
   rug: THREE.MeshStandardMaterial;
   foliage: THREE.MeshStandardMaterial;
   foliageLight: THREE.MeshStandardMaterial;
+  tuft: THREE.MeshStandardMaterial;
   bark: THREE.MeshStandardMaterial;
   terracotta: THREE.MeshStandardMaterial;
   gravel: THREE.MeshStandardMaterial;
@@ -108,7 +110,7 @@ export async function createMaterials(
         bumpMap: concrete.bumpMap,
         bumpScale: 1.6,
         roughnessMap: concrete.roughnessMap,
-        color: 0xc1bfb8,
+        color: 0xb7b5ae,
         roughness: 0.93,
         metalness: 0,
       }),
@@ -119,7 +121,7 @@ export async function createMaterials(
         bumpMap: concreteWall.bumpMap,
         bumpScale: 1.3,
         roughnessMap: concreteWall.roughnessMap,
-        color: 0xcbc9c2,
+        color: 0xc2c0b8,
         roughness: 0.86,
       }),
     ),
@@ -146,17 +148,17 @@ export async function createMaterials(
         map: terraceStone.map,
         bumpMap: terraceStone.bumpMap,
         bumpScale: 0.3,
-        color: 0xdcd6c8,
+        color: 0xd3ccbd,
         roughness: 0.66,
       }),
     ),
-    plaster: clipped(std({ color: 0xe9e5db, roughness: 0.96, envMapIntensity: 0.55 })),
+    plaster: clipped(std({ color: 0xdedacf, roughness: 0.96, envMapIntensity: 0.5 })),
     floorWood: clipped(
       std({
         map: floor.map,
         roughnessMap: floor.roughnessMap,
-        color: 0xdcd2c2,
-        roughness: 0.62,
+        color: 0xd9cbb4,
+        roughness: 0.58,
         metalness: 0.02,
       }),
     ),
@@ -194,8 +196,8 @@ export async function createMaterials(
         roughness: 0.035,
         transmission: 0,
         transparent: true,
-        opacity: 0.16,
-        envMapIntensity: 2.1,
+        opacity: 0.085,
+        envMapIntensity: 1.55,
         clearcoat: 1,
         clearcoatRoughness: 0.02,
         side: THREE.DoubleSide,
@@ -219,19 +221,20 @@ export async function createMaterials(
     ),
     water: clipped(
       new THREE.MeshPhysicalMaterial({
-        color: 0x24383b,
-        metalness: 0.15,
-        roughness: 0.03,
+        color: 0x0d191c,
+        metalness: 0.62,
+        roughness: 0.02,
         transparent: true,
-        opacity: 0.92,
-        envMapIntensity: 3.2,
+        opacity: 0.96,
+        envMapIntensity: 3.6,
         clearcoat: 1,
         clearcoatRoughness: 0.02,
         side: THREE.DoubleSide,
         depthWrite: false,
       }),
     ),
-    basin: clipped(std({ color: 0x16201f, roughness: 0.5, metalness: 0.05 })),
+    // pale stone lining: what you actually see through the water
+    basin: clipped(std({ color: 0x93a49d, roughness: 0.62, metalness: 0.03 })),
     pebble: clipped(std({ color: 0x6c6b63, roughness: 0.85 })),
     fabric: clipped(
       std({ map: fabric.map, color: 0xe4dccd, roughness: 0.96, envMapIntensity: 0.6 }),
@@ -247,6 +250,18 @@ export async function createMaterials(
     ),
     foliageLight: clipped(
       std({ color: 0x6f7a4c, roughness: 0.88, envMapIntensity: 0.6, side: THREE.DoubleSide }),
+    ),
+    tuft: clipped(
+      std({
+        map: createGrassTuftTexture(),
+        alphaMap: createGrassTuftTexture(),
+        transparent: false,
+        alphaTest: 0.32,
+        color: 0xa8a176,
+        roughness: 1,
+        envMapIntensity: 0.5,
+        side: THREE.DoubleSide,
+      }),
     ),
     bark: clipped(std({ color: 0x3f3830, roughness: 0.96 })),
     terracotta: clipped(std({ color: 0x8d6448, roughness: 0.82 })),
@@ -266,7 +281,7 @@ export async function createMaterials(
         map: gravel.map,
         bumpMap: gravel.bumpMap,
         bumpScale: 1,
-        color: 0x9d9a92,
+        color: 0x8d8b85,
         roughness: 1,
         envMapIntensity: 0.65,
       }),
@@ -279,12 +294,12 @@ export async function createMaterials(
       envMapIntensity: 1.9,
       fog: false,
     }),
-    rock: std({ color: 0x6b6459, roughness: 0.94, envMapIntensity: 0.55 }),
+    rock: std({ color: 0x555049, roughness: 0.94, envMapIntensity: 0.5 }),
     glow: clipped(
       std({
         color: 0xffd6a4,
         emissive: new THREE.Color(0xffc98a),
-        emissiveIntensity: 2.6,
+        emissiveIntensity: 0.85,
         roughness: 1,
         metalness: 0,
       }),
@@ -293,7 +308,7 @@ export async function createMaterials(
       std({
         color: 0xf2ece1,
         emissive: new THREE.Color(0xffd8b0),
-        emissiveIntensity: 0.9,
+        emissiveIntensity: 0.4,
         roughness: 0.6,
       }),
     ),

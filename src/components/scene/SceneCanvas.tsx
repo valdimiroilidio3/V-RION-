@@ -15,6 +15,7 @@ import { CameraController } from "./CameraController";
 import { CinematicSequence } from "./CinematicSequence";
 import { HotspotProjector } from "./SceneHotspots";
 import { SelectionFrame } from "./SelectionFrame";
+import { ScenePostFX } from "./ScenePostFX";
 
 function FrameGate({ onReady }: { onReady: () => void }) {
   const frames = useRef(0);
@@ -139,7 +140,7 @@ export default function SceneCanvas() {
         near: 0.1,
         far: 3000,
       }}
-      onCreated={({ gl, scene, camera }) => {
+      onCreated={({ gl, scene, camera, size }) => {
         if (process.env.NODE_ENV !== "production") {
           (window as unknown as Record<string, unknown>).__VERTEX = {
             camera,
@@ -157,7 +158,7 @@ export default function SceneCanvas() {
         }
         gl.localClippingEnabled = true;
         gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 0.24;
+        gl.toneMappingExposure = 0.22;
         gl.shadowMap.type = THREE.PCFSoftShadowMap;
         scene.background = new THREE.Color("#080a0c");
         REVEAL_PLANE.constant = -1.2;
@@ -170,7 +171,7 @@ export default function SceneCanvas() {
       {materials ? (
         <>
           <SceneLandscape m={materials} sunDirection={[-0.78, 0.245, 0.5]} quality={profile.quality} />
-          <MainEnvironment m={materials} />
+          <MainEnvironment m={materials} quality={profile.quality} />
           <SelectionFrame />
           <CinematicSequence profile={profile} />
           <CameraController profile={profile} interactive={interactive} />
@@ -178,6 +179,7 @@ export default function SceneCanvas() {
       ) : null}
 
       <HotspotProjector />
+      {materials && framesReady ? <ScenePostFX profile={profile} /> : null}
       <AdaptiveDpr />
       <FrameGate onReady={handleFrames} />
     </Canvas>

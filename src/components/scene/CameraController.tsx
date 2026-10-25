@@ -41,8 +41,8 @@ const tmpVec = new THREE.Vector3();
 function adaptPose(pose: CamPose, aspect: number): CamPose {
   if (aspect >= 1.02) return pose;
   const t = clamp((1.02 - aspect) / 0.58, 0, 1);
-  const k = THREE.MathUtils.lerp(1.0, 1.86, t);
-  const lift = THREE.MathUtils.lerp(0, 0.9, t);
+  const k = THREE.MathUtils.lerp(1.0, 1.46, t);
+  const lift = THREE.MathUtils.lerp(0, 1.5, t);
   return {
     pos: [
       pose.target[0] + (pose.pos[0] - pose.target[0]) * k,
@@ -50,7 +50,7 @@ function adaptPose(pose: CamPose, aspect: number): CamPose {
       pose.target[2] + (pose.pos[2] - pose.target[2]) * k,
     ],
     target: [pose.target[0], pose.target[1] - THREE.MathUtils.lerp(0, 0.35, t), pose.target[2]],
-    fov: Math.min(74, pose.fov + (k - 1) * 13),
+    fov: Math.min(70, pose.fov + (k - 1) * 19),
   };
 }
 
@@ -113,6 +113,7 @@ export function CameraController({
   const savedPose = useRef<CamPose | null>(null);
   const anchor = useRef(new THREE.Vector3(...VIEWS.approach.pose.target));
   const introStarted = useRef(false);
+  const readoutTick = useRef(0);
   const limits = useRef({
     minDistance: 12,
     maxDistance: 60,
@@ -408,6 +409,7 @@ export function CameraController({
     const controls = controlsRef.current;
     if (!controls) return;
     const dt = Math.min(0.12, delta);
+    const cam = camera as THREE.PerspectiveCamera;
 
     if (ui.phase === "entry" && !introStarted.current) startIntro();
     if (ui.phase !== "explore" && ui.phase !== "entry") {
@@ -430,7 +432,6 @@ export function CameraController({
         THREE.MathUtils.lerp(f.from.target[1], f.to.target[1], v),
         THREE.MathUtils.lerp(f.from.target[2], f.to.target[2], v),
       );
-      const cam = camera as THREE.PerspectiveCamera;
       cam.fov = THREE.MathUtils.lerp(f.from.fov, f.to.fov, v);
       cam.updateProjectionMatrix();
       resolveCollision(camera.position);
@@ -453,7 +454,6 @@ export function CameraController({
       const damping = 1 - Math.exp(-dt * 2.1);
       camera.position.lerp(tmpVec.set(...pose.pos), damping);
       controls.target.lerp(tmpVec.set(...pose.target), damping);
-      const cam = camera as THREE.PerspectiveCamera;
       cam.fov += (pose.fov - cam.fov) * damping;
       cam.updateProjectionMatrix();
       anchor.current.lerp(tmpVec.set(...pose.target), damping);
@@ -476,6 +476,24 @@ export function CameraController({
 
     resolveCollision(camera.position);
     controls.update();
+
+    // live optics: distance to the orbit target and the full-frame equivalent
+    // focal length of the current vertical FOV (24 mm sensor height). Written
+    // to the store at ~8 Hz and only when it actually moved, so the DOM
+    // readout never becomes a per-frame cost.
+    const readout = useUI.getState();
+    readoutTick.current += dt;
+    if (readoutTick.current > 0.12) {
+      readoutTick.current = 0;
+      const distance = camera.position.distanceTo(controls.target);
+      const focal = 12 / Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2);
+      if (
+        Math.abs(distance - readout.cameraDistance) > 0.08 ||
+        Math.abs(focal - readout.focalLength) > 0.6
+      ) {
+        readout.setCameraInfo(distance, focal);
+      }
+    }
 
     // keep the orbit inside its art-directed azimuth range
     const offset = tmpVec.subVectors(camera.position, controls.target);

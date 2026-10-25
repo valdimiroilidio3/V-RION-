@@ -21,6 +21,10 @@ export interface UIState {
   exploreMode: boolean;
   skipRequested: boolean;
 
+  /** live perspective readout for the technical chrome */
+  cameraDistance: number;
+  focalLength: number;
+
   error: string | null;
 
   setBootProgress: (n: number) => void;
@@ -35,6 +39,7 @@ export interface UIState {
   setFullscreen: (b: boolean) => void;
   setOrbitUsed: (b: boolean) => void;
   setExploreMode: (b: boolean) => void;
+  setCameraInfo: (distance: number, focal: number) => void;
   requestSkip: () => void;
   setError: (e: string | null) => void;
 }
@@ -60,6 +65,9 @@ export const useUI = create<UIState>((set) => ({
   exploreMode: false,
   skipRequested: false,
 
+  cameraDistance: 24,
+  focalLength: 33,
+
   error: null,
 
   setBootProgress: (n) => set({ bootProgress: Math.max(0, Math.min(1, n)) }),
@@ -74,6 +82,7 @@ export const useUI = create<UIState>((set) => ({
   setFullscreen: (fullscreen) => set({ fullscreen }),
   setOrbitUsed: (orbitUsed) => set({ orbitUsed }),
   setExploreMode: (exploreMode) => set({ exploreMode }),
+  setCameraInfo: (cameraDistance, focalLength) => set({ cameraDistance, focalLength }),
   requestSkip: () => set({ skipRequested: true }),
   setError: (error) => set({ error }),
 }));

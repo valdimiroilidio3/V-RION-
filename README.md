@@ -28,6 +28,8 @@ Parâmetros de QA/presentação:
 | `?q=medium`  | força o perfil médio                                                |
 | `?q=high`    | força o perfil alto (sombras 2048, DPR até 2)                        |
 | `?instant=1` | salta a sequência cinematográfica (útil para capturas ou máquinas fracas) |
+| `?fx=none`   | desliga SMAA/gradação/vinheta/grão (necessário para medir sem *post*)  |
+| `?aa=fxaa`   | troca SMAA por FXAA (perfil muito baixo / GPUs antigas)             |
 
 ---
 
@@ -92,8 +94,9 @@ O scroll conduz uma narrativa de câmara em cinco passos (GSAP ScrollTrigger,
 ### Interface
 
 Cromo mínimo sobre a cena: identificação do atelier, título editorial, escala
-1:200, leituras de vista/cota, selector de vistas, zoom, reset, ecrã inteiro,
-dica de interacção, painel contextual (só com selecção) e indicador de
+leitura de óptica (distância à câmara + distância focal equivalente em full
+frame, actualizada durante a órbita), selector de vistas, zoom, reset, ecrã
+inteiro, dica de interacção, painel contextual (só com selecção) e indicador de
 carregamento. Tipografia Space Grotesk (títulos) + Inter (texto), paleta
 `#090B0D / #171A1D / #F3F3EF / #92979D`, com o verde `#B9FF00` reservado a
 elementos técnicos (estado activo, contorno de selecção, focos).
@@ -103,12 +106,13 @@ elementos técnicos (estado activo, contorno de selecção, focos).
 - Perfis `high` / `medium` / `low` derivados de `hardwareConcurrency`,
   `deviceMemory`, `MAX_TEXTURE_SIZE`, tipo de ponteiro e largura do ecrã.
 - Texturas geradas na resolução do perfil (1024/512/256 px) e mantidas em cache.
-- Geometria combinada por material (paredes, lajes, pérgula, etc.) para reduzir
-  draw calls. Contagem real via `gl.info.render`:
-  **perfil baixo — 238 draw calls / 56 288 triângulos**;
-  **perfil médio — 378 draw calls / 98 040 triângulos** (o incremento vem das
-  sombras e da vegetação de detalhe 2). Geometrias: 221, texturas: 27,
-  programas: 19.
+- Geometria combinada por material (paredes, lajes, pérgula, mobiliário, muro
+  de pedra, detalhe de construção) para reduzir draw calls, mais *instancing*
+  nos tufos de erva. Orçamento medido percorrendo a cena em cada perfil:
+  **baixo — 326 malhas / 63 614 triângulos**, **médio — 328 malhas /
+  68 378 triângulos**, **alto — 328 malhas / 72 462 triângulos**; geometrias
+  309–313, texturas 36–38, 10 luzes (sol + sombra, duas direccionais, céu/solo,
+  quatro interiores, uma submersa).
 - `frameloop="never"` quando o separador está oculto; `AdaptiveDpr` activo.
 - Erros tratados: perda de contexto WebGL, falha na preparação de materiais,
   ecrã inteiro indisponível. Sem WebGL, é apresentada uma elevação desenhada e a
@@ -171,8 +175,18 @@ componentes React.
   integração é `useGLTF` + `SceneCanvas`, mantendo o resto do sistema.
 - As texturas são procedurais (canvas), não fotografias digitalizadas: a
   variação existe, mas não tem a riqueza de um scan PBR.
-- Reflexos em vidro e água usam ambiente + `MeshPhysicalMaterial`; não há
-  reflexão planar em tempo real (custo/benefício desfavorável em WebGL).
+- Reflexos em vidro e água usam o ambiente PMREM + `MeshPhysicalMaterial`; não
+  há reflexão planar em tempo real. Foi implementada com `MeshReflectorMaterial`
+  e removida: o segundo *pass* da cena, combinado com os materiais com *clipping*
+  usados no corte de planta e nas paredes, estourava grandes áreas para branco.
+- O *post-processing* é deliberadamente curto — SMAA, correcção de saturação,
+  contraste, vinheta e grão. Bloom foi testado e retirado (transformava cada
+  aplique num disco luminoso, exatamente o look artificial que o projecto
+  evita); N8AO/SSAO e MSAA foram testados e retirados porque quebravam o
+  *framebuffer* em buffers grandes com ANGLE/SwiftShader e deixavam ruído nas
+  carpintarias finas. As sombras de contacto vêm do mapa de sombras do sol e de
+  texturas de oclusão assadas. DOF fica de fora: com órbita livre o plano focal
+  muda a cada gesto.
 - Sem sombras em cascata: uma única luz com sombra, ajustada ao volume da casa.
 - As medições de desempenho nesta entrega foram feitas num browser headless com
   renderização por software (SwiftShader). É representativo de draw calls,

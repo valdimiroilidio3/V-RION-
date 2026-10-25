@@ -97,7 +97,7 @@ export function CinematicSequence({ profile }: { profile: DeviceProfile }) {
       tl.to(gl, { toneMappingExposure: 1, duration: 2.6, ease: "power1.inOut" }, 0.1);
       tl.to(REVEAL_PLANE, { constant: 5.5, duration: 3.0, ease: "power2.inOut" }, 0.55);
       if (fog) tl.to(fog, { density: 0.0024, duration: 3.4, ease: "power2.out" }, 0);
-      tl.to(gl, { toneMappingExposure: 0.96, duration: 1.4, ease: "sine.inOut" }, 3.0);
+      tl.to(gl, { toneMappingExposure: 1.04, duration: 1.4, ease: "sine.inOut" }, 3.0);
       timeline.current = tl;
     };
 
@@ -111,7 +111,7 @@ export function CinematicSequence({ profile }: { profile: DeviceProfile }) {
           tl.kill();
         }
         REVEAL_PLANE.constant = 6;
-        gl.toneMappingExposure = 1;
+        gl.toneMappingExposure = 1.04;
         if (lineMaterial.current) lineMaterial.current.opacity = 0;
         if (fog) fog.density = 0.0024;
       }

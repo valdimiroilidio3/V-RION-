@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { SceneMaterials } from "@/lib/materials";
+import { REVEAL_PLANE } from "@/lib/materials";
+import { createRippleTexture } from "@/lib/textures";
+import type { Quality } from "@/lib/quality";
 import { boxGeometry, oliveTree, type BoxPart } from "@/lib/geometry";
 import { Selectable } from "./Selectable";
 import { Interior } from "./SceneInterior";
+import { ArchitecturalDetail, SiteDetail, SoffitLighting, TerraceFurniture } from "./SceneDetail";
 
 /* ------------------------------------------------------------------ plan */
 export const X0 = -3.4;
@@ -163,13 +168,30 @@ function Roof({ m }: { m: SceneMaterials }) {
     ];
   }, []);
 
-  const ballast = useMemo<BoxPart[]>(
+  const ballast = useMemo<BoxPart[]>(() => {
+    const inset = 0.34;
+    const bx0 = X0 + inset;
+    const bx1 = X1 - inset;
+    const bz0 = Z0 + inset;
+    const bz1 = Z1 - inset;
+    const p = 0.2; // parapet height
+    return [
+      // substrate, flush with the parapet base
+      { s: [bx1 - bx0, 0.06, bz1 - bz0], p: [(bx0 + bx1) / 2, ROOF + 0.03, (bz0 + bz1) / 2] },
+      // parapet on all four sides — a protected roof, not a floating slab
+      { s: [X1 - X0, p, 0.14], p: [(X0 + X1) / 2, ROOF + p / 2, Z0 + 0.07] },
+      { s: [X1 - X0, p, 0.14], p: [(X0 + X1) / 2, ROOF + p / 2, Z1 - 0.07] },
+      { s: [0.14, p, Z1 - Z0], p: [X0 + 0.07, ROOF + p / 2, (Z0 + Z1) / 2] },
+      { s: [0.14, p, Z1 - Z0], p: [X1 - 0.07, ROOF + p / 2, (Z0 + Z1) / 2] },
+    ];
+  }, []);
+
+  const coping = useMemo<BoxPart[]>(
     () => [
-      { s: [X1 - X0 - 0.5, 0.05, Z1 - Z0 - 0.5], p: [(X0 + X1) / 2, ROOF + 0.025, (Z0 + Z1) / 2] },
-      // parapet upstands, so the roof reads as a protected terrace
-      { s: [X1 - X0, 0.16, 0.1], p: [(X0 + X1) / 2, ROOF + 0.08, Z0 + 0.05] },
-      { s: [0.1, 0.16, Z1 - Z0], p: [X0 + 0.05, ROOF + 0.08, (Z0 + Z1) / 2] },
-      { s: [0.1, 0.16, Z1 - Z0], p: [X1 - 0.05, ROOF + 0.08, (Z0 + Z1) / 2] },
+      { s: [X1 - X0, 0.016, 0.18], p: [(X0 + X1) / 2, ROOF + 0.208, Z0 + 0.07] },
+      { s: [X1 - X0, 0.016, 0.18], p: [(X0 + X1) / 2, ROOF + 0.208, Z1 - 0.07] },
+      { s: [0.18, 0.016, Z1 - Z0], p: [X0 + 0.07, ROOF + 0.208, (Z0 + Z1) / 2] },
+      { s: [0.18, 0.016, Z1 - Z0], p: [X1 - 0.07, ROOF + 0.208, (Z0 + Z1) / 2] },
     ],
     [],
   );
@@ -189,6 +211,7 @@ function Roof({ m }: { m: SceneMaterials }) {
     <group>
       <PartMesh parts={parts} material={m.concrete} />
       <PartMesh parts={ballast} material={m.ballast} castShadow={false} />
+      <PartMesh parts={coping} material={m.steel} castShadow={false} />
       <PartMesh parts={soffit} material={m.plaster} castShadow={false} />
     </group>
   );
@@ -199,26 +222,22 @@ function Roof({ m }: { m: SceneMaterials }) {
 function Skylight({ m }: { m: SceneMaterials }) {
   const well = useMemo<BoxPart[]>(
     () => [
-      { s: [2.62, 0.7, 0.22], p: [4.7, 4.3, -4.5] },
-      { s: [2.62, 0.7, 0.22], p: [4.7, 4.3, -2.1] },
-      { s: [0.22, 0.7, 2.18], p: [3.5, 4.3, -3.3] },
-      { s: [0.22, 0.7, 2.18], p: [5.9, 4.3, -3.3] },
-      // upstand cap
-      { s: [2.9, 0.08, 0.42], p: [4.7, 4.64, -4.55] },
-      { s: [2.9, 0.08, 0.42], p: [4.7, 4.64, -2.05] },
-      { s: [0.42, 0.08, 2.1], p: [3.44, 4.64, -3.3] },
-      { s: [0.42, 0.08, 2.1], p: [5.96, 4.64, -3.3] },
+      // solid curb, thick enough to read as a real upstand
+      { s: [2.9, 0.56, 0.34], p: [4.7, 4.24, -4.5] },
+      { s: [2.9, 0.56, 0.34], p: [4.7, 4.24, -2.1] },
+      { s: [0.34, 0.56, 2.06], p: [3.42, 4.24, -3.3] },
+      { s: [0.34, 0.56, 2.06], p: [5.98, 4.24, -3.3] },
     ],
     [],
   );
 
   const frames = useMemo<BoxPart[]>(
     () => [
-      { s: [2.5, 0.05, 0.06], p: [4.7, 4.63, -4.37] },
-      { s: [2.5, 0.05, 0.06], p: [4.7, 4.63, -2.23] },
-      { s: [0.06, 0.05, 2.2], p: [3.51, 4.63, -3.3] },
-      { s: [0.06, 0.05, 2.2], p: [5.89, 4.63, -3.3] },
-      { s: [0.05, 0.05, 2.2], p: [4.7, 4.635, -3.3] },
+      { s: [2.62, 0.04, 0.07], p: [4.7, 4.53, -4.32] },
+      { s: [2.62, 0.04, 0.07], p: [4.7, 4.53, -2.28] },
+      { s: [0.07, 0.04, 2.1], p: [3.47, 4.53, -3.3] },
+      { s: [0.07, 0.04, 2.1], p: [5.93, 4.53, -3.3] },
+      { s: [0.05, 0.035, 2.1], p: [4.7, 4.53, -3.3] },
     ],
     [],
   );
@@ -227,8 +246,8 @@ function Skylight({ m }: { m: SceneMaterials }) {
     <Selectable id="skylight">
       <PartMesh parts={well} material={m.concreteSmooth} />
       <PartMesh parts={frames} material={m.steel} castShadow={false} />
-      <mesh position={[4.7, 4.63, -3.3]} material={m.glassRail} castShadow={false}>
-        <boxGeometry args={[2.36, 0.02, 2.08]} />
+      <mesh position={[4.7, 4.5, -3.3]} material={m.glassRail} castShadow={false}>
+        <boxGeometry args={[2.5, 0.018, 2.04]} />
       </mesh>
     </Selectable>
   );
@@ -322,6 +341,8 @@ function Terrace({ m }: { m: SceneMaterials }) {
 }
 
 function Pool({ m }: { m: SceneMaterials }) {
+  const ripple = useMemo(() => createRippleTexture(), []);
+
   const basin = useMemo<BoxPart[]>(
     () => [
       { s: [3.4, 0.1, 3.1], p: [0, -1.5, 5.5] },
@@ -329,63 +350,54 @@ function Pool({ m }: { m: SceneMaterials }) {
       { s: [3.4, 1.5, 0.1], p: [0, -0.75, 7.0] },
       { s: [0.1, 1.5, 2.9], p: [-1.65, -0.75, 5.5] },
       { s: [0.1, 1.5, 2.9], p: [1.65, -0.75, 5.5] },
-      // overflow slot at the south edge
       { s: [3.42, 0.06, 0.05], p: [0, 0.0, 7.08] },
     ],
     [],
   );
 
-  const waterTexture = useMemo(() => {
-    const size = 256;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      const grad = ctx.createLinearGradient(0, 0, 0, size);
-      grad.addColorStop(0, "rgba(255,255,255,0.0)");
-      grad.addColorStop(0.5, "rgba(255,255,255,0.06)");
-      grad.addColorStop(1, "rgba(255,255,255,0.0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, size, size);
-      for (let i = 0; i < 420; i++) {
-        ctx.strokeStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
-        ctx.beginPath();
-        const y = Math.random() * size;
-        ctx.moveTo(0, y);
-        ctx.bezierCurveTo(size * 0.3, y + 3, size * 0.6, y - 3, size, y);
-        ctx.stroke();
-      }
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, 1);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
-
+  /*
+   * Planar reflection (drei's MeshReflectorMaterial) was measured and removed:
+   * it re-renders the scene through a mirrored camera and, combined with our
+   * clipped materials, blew large patches to pure white. The water instead
+   * relies on a hard physical material — a very dark, near-mirror finish with
+   * a varying roughness map, plus the PMREM environment — which reflects the
+   * dusk sky convincingly and never fails.
+   */
   return (
     <Selectable id="pool">
       <PartMesh parts={basin} material={m.basin} castShadow={false} />
-      <mesh
-        rotation-x={-Math.PI / 2}
-        position={[0, POOL.water, 5.5]}
-        material={m.water}
-        receiveShadow
-      >
+      <mesh rotation-x={-Math.PI / 2} position={[0, POOL.water, 5.5]} receiveShadow>
         <planeGeometry args={[3.36, 3.06]} />
-      </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, POOL.water + 0.004, 5.5]}>
-        <planeGeometry args={[3.36, 3.06]} />
-        <meshStandardMaterial
-          map={waterTexture}
+        {/*
+          Water is a dielectric: at the steep angles you get from above it is
+          almost transparent and you read the tiled basin, while at grazing
+          angles the fresnel term takes over and it mirrors the sky. A dark
+          opaque sheet looked like a hole in the deck from the aerial view.
+        */}
+        <meshPhysicalMaterial
+          color={0x1d3b3d}
           transparent
-          opacity={0.5}
-          roughness={0.15}
+          opacity={0.66}
+          metalness={0.12}
+          roughness={0.05}
+          roughnessMap={ripple}
+          bumpMap={ripple}
+          bumpScale={0.3}
+          envMapIntensity={4.6}
+          clearcoat={1}
+          clearcoatRoughness={0.03}
+          reflectivity={1}
+          ior={1.33}
           depthWrite={false}
-          color={0x8fa6a4}
+          toneMapped
         />
       </mesh>
+      {/* thin bright meniscus at the overflow edge, as water actually reads */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, POOL.water + 0.002, 7.02]}>
+        <planeGeometry args={[3.34, 0.07]} />
+        <meshBasicMaterial color={0xa9bdb8} transparent opacity={0.35} toneMapped={false} />
+      </mesh>
+      <pointLight position={[0, -0.55, 5.5]} intensity={2.4} distance={4} decay={2} color="#7fd0c8" />
     </Selectable>
   );
 }
@@ -554,9 +566,11 @@ function InteriorFloor({ m }: { m: SceneMaterials }) {
 
 export function MainEnvironment({
   m,
+  quality,
   showInterior = true,
 }: {
   m: SceneMaterials;
+  quality: Quality;
   showInterior?: boolean;
 }) {
   return (
@@ -573,6 +587,10 @@ export function MainEnvironment({
       <Pergola m={m} />
       <StoneVolume m={m} />
       <Courtyard m={m} />
+      <ArchitecturalDetail m={m} />
+      <SoffitLighting m={m} />
+      <TerraceFurniture m={m} />
+      <SiteDetail m={m} quality={quality} />
       {showInterior ? <Interior m={m} /> : null}
     </group>
   );

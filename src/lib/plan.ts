@@ -75,6 +75,24 @@ export const WORLD_BOUNDS = {
   maxY: 30,
 };
 
+/** Terrain displacement shared by the landscape mesh and everything placed on it. */
+export function terrainHeight(x: number, z: number): number {
+  const dx = x - 3;
+  const dz = z + 1;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  const t = smoothstep(dist, 18, 48);
+  const noise =
+    Math.sin(x * 0.075) * Math.cos(z * 0.11) * 0.62 +
+    Math.sin(x * 0.19 + 1.7) * Math.cos(z * 0.23 - 0.6) * 0.26 +
+    Math.sin(x * 0.42 - 0.4) * Math.sin(z * 0.37) * 0.12;
+  return ARCH.gradeY + noise * 1.15 * t;
+}
+
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
 export function isInsideSolid(
   x: number,
   y: number,

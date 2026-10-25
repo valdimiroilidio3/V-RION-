@@ -29,8 +29,17 @@ export function Chrome({
   const selectedId = useUI((state) => state.selectedId);
   const exploreMode = useUI((state) => state.exploreMode);
   const narrative = useUI((state) => state.narrative);
+  const cameraDistance = useUI((state) => state.cameraDistance);
+  const focalLength = useUI((state) => state.focalLength);
 
-  const heroHidden = phase !== "explore" || narrative > 0.035 || exploreMode || selectedId !== null;
+  // the hero belongs to the establishing view; once the visitor picks another
+  // view, the scene itself gets the frame
+  const heroHidden =
+    phase !== "explore" ||
+    narrative > 0.035 ||
+    exploreMode ||
+    selectedId !== null ||
+    (viewId !== null && viewId !== "approach");
   const index = viewId ? VIEW_INDEX[viewId] : "--";
 
   return (
@@ -51,9 +60,22 @@ export function Chrome({
         </div>
 
         <div className="topbar__right">
-          <div className="scale-readout" aria-hidden="true">
-            <span className="scale-readout__bar" />
-            <span>1 : 200</span>
+          {/*
+            Real optics, not a decorative scale mark: the distance from the
+            camera to what it is orbiting, and the full-frame equivalent focal
+            length derived from the live vertical FOV. The bar scales with the
+            focal length, so zooming visibly changes the drawing.
+          */}
+          <div className="readout" aria-hidden="true">
+            <span
+              className="readout__bar"
+              style={{ width: `${Math.max(14, Math.min(64, focalLength * 0.9))}px` }}
+            />
+            <span className="readout__value">
+              {cameraDistance.toFixed(1).replace(".", ",")} m
+              <span className="readout__sep" />
+              {Math.round(focalLength)} mm
+            </span>
           </div>
           {!mobile ? (
             <div className="zoom-group">

@@ -93,8 +93,8 @@ function concreteAlbedo(size: number, seed: number): HTMLCanvasElement {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
 
-  softBlobs(ctx, size, 46, random, ["#8d8a80", "#cfcabd", "#a09b90"], [size * 0.05, size * 0.3], [0.05, 0.16]);
-  softBlobs(ctx, size, 30, random, ["#d7d2c5", "#9a958a"], [size * 0.02, size * 0.12], [0.05, 0.12]);
+  softBlobs(ctx, size, 34, random, ["#8d8a80", "#cbc6b9", "#a09b90"], [size * 0.07, size * 0.34], [0.035, 0.11]);
+  softBlobs(ctx, size, 22, random, ["#d2cdc0", "#9a958a"], [size * 0.03, size * 0.14], [0.04, 0.09]);
 
   // board-formed horizontal joints
   const boards = 6;
@@ -496,7 +496,7 @@ export function createEnvironmentTexture(width = 1024): THREE.Texture {
   const img = ctx.getImageData(0, 0, width, height);
   const data = img.data;
   for (let i = 0; i < data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 5;
+    const n = (Math.random() - 0.5) * 3;
     data[i] = Math.max(0, Math.min(255, data[i] + n));
     data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + n));
     data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + n));
@@ -535,4 +535,68 @@ export function disposeTextureCache() {
   for (const texture of cache.values()) texture.dispose();
   cache.clear();
   canvasCache.clear();
+}
+
+/* --------------------------------------------------------------- water ripple */
+
+/** Tileable ripple field used as the distortion map for the pool reflector. */
+export function createRippleTexture(): THREE.Texture {
+  const key = "ripple";
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const size = 256;
+  const { canvas, ctx } = makeCanvas(size);
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, size, size);
+  const random = seeded(404);
+  for (let i = 0; i < 260; i++) {
+    const x = random() * size;
+    const y = random() * size;
+    const r = 6 + random() * 34;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    const up = random() > 0.5 ? "255,255,255" : "0,0,0";
+    grad.addColorStop(0, `rgba(${up},${0.1 + random() * 0.22})`);
+    grad.addColorStop(1, `rgba(${up},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r * (0.5 + random() * 0.4), random() * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = toTexture(canvas, { repeat: [2, 2] });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  cache.set(key, tex);
+  return tex;
+}
+
+/** Dry grass tuft alpha for the site, keeps the ground from reading as felt. */
+export function createGrassTuftTexture(): THREE.Texture {
+  const key = "tuft";
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const size = 128;
+  const { canvas, ctx } = makeCanvas(size);
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, size, size);
+  const random = seeded(77);
+  for (let i = 0; i < 90; i++) {
+    const x = size / 2 + (random() - 0.5) * size * 0.8;
+    const h = size * (0.35 + random() * 0.6);
+    const lean = (random() - 0.5) * size * 0.3;
+    const w = 0.8 + random() * 1.6;
+    const shade = Math.floor(120 + random() * 135);
+    const grad = ctx.createLinearGradient(x, size, x + lean, size - h);
+    grad.addColorStop(0, `rgb(${shade * 0.55},${shade * 0.55},${shade * 0.4})`);
+    grad.addColorStop(1, `rgb(${shade},${shade},${shade * 0.8})`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(x, size);
+    ctx.quadraticCurveTo(x + lean * 0.3, size - h * 0.6, x + lean, size - h);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  cache.set(key, tex);
+  return tex;
 }

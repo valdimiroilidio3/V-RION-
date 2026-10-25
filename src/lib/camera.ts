@@ -29,7 +29,7 @@ export const VIEWS: Record<ViewId, ViewDef> = {
     num: "01",
     name: "Aproximação",
     short: "Aproximação",
-    pose: { pos: [18.6, 5.6, 21.0], target: [4.6, 1.55, -0.5], fov: 40 },
+    pose: { pos: [16.9, 4.9, 18.7], target: [4.6, 1.45, -0.6], fov: 44 },
     minDistance: 14,
     maxDistance: 46,
     azimuth: [0.28, 1.18],
@@ -41,7 +41,7 @@ export const VIEWS: Record<ViewId, ViewDef> = {
     num: "02",
     name: "Espelho de água",
     short: "Piscina",
-    pose: { pos: [0.9, 1.35, 10.2], target: [1.5, 1.15, 2.2], fov: 46 },
+    pose: { pos: [2.85, 0.98, 8.15], target: [0.05, 0.28, 4.85], fov: 42 },
     minDistance: 3.2,
     maxDistance: 22,
     azimuth: [-0.42, 0.3],
@@ -106,7 +106,7 @@ export interface NarrativeKey {
 export const NARRATIVE: NarrativeKey[] = [
   {
     at: 0,
-    pose: { pos: [18.6, 5.6, 21.0], target: [4.6, 1.55, -0.5], fov: 40 },
+    pose: { pos: [16.9, 4.9, 18.7], target: [4.6, 1.45, -0.6], fov: 44 },
   },
   {
     at: 0.2,
