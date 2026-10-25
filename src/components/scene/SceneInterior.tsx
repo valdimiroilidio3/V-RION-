@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { RoundedBox } from "@react-three/drei";
+import { shrubGeometry } from "@/lib/geometry";
 import type { SceneMaterials } from "@/lib/materials";
 import { Selectable } from "./Selectable";
 
@@ -133,6 +135,8 @@ function Kitchen({ m }: { m: SceneMaterials }) {
 }
 
 function Living({ m }: { m: SceneMaterials }) {
+  const potGeometry = useMemo(() => shrubGeometry(143, 0.56, 2), []);
+
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} position={[6.4, 0.082, -2.9]} material={m.rug} receiveShadow>
@@ -286,9 +290,7 @@ function Living({ m }: { m: SceneMaterials }) {
       <mesh position={[5.75, 0.44, -3.35]} material={m.terracotta} castShadow>
         <cylinderGeometry args={[0.19, 0.15, 0.42, 20]} />
       </mesh>
-      <mesh position={[5.75, 1.15, -3.35]} material={m.foliage} castShadow>
-        <icosahedronGeometry args={[0.34, 1]} />
-      </mesh>
+      <mesh position={[5.75, 0.6, -3.35]} geometry={potGeometry} material={m.foliage} castShadow receiveShadow />
     </group>
   );
 }
@@ -352,6 +354,8 @@ function Suite({ m }: { m: SceneMaterials }) {
 }
 
 function Exterior({ m }: { m: SceneMaterials }) {
+  const potGeometry = useMemo(() => shrubGeometry(311, 0.64, 2), []);
+
   return (
     <group>
       {/* planters flanking the glass line */}
@@ -366,9 +370,7 @@ function Exterior({ m }: { m: SceneMaterials }) {
           <mesh position={[0, 0.56, 0]} material={m.soil}>
             <cylinderGeometry args={[0.32, 0.32, 0.04, 20]} />
           </mesh>
-          <mesh position={[0, 0.95, 0]} material={m.foliageLight} castShadow>
-            <icosahedronGeometry args={[0.42, 1]} />
-          </mesh>
+          <mesh position={[0, 0.58, 0]} geometry={potGeometry} material={m.foliageLight} castShadow receiveShadow />
         </group>
       ))}
       {/* outdoor shower head in the travertine volume */}

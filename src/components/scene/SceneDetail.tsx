@@ -4,7 +4,14 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { RoundedBox } from "@react-three/drei";
 import type { SceneMaterials } from "@/lib/materials";
-import { boxGeometry, mergeAll, mulberry32, type BoxPart } from "@/lib/geometry";
+import {
+  boxGeometry,
+  mergeAll,
+  mulberry32,
+  rockGeometry,
+  shrubGeometry,
+  type BoxPart,
+} from "@/lib/geometry";
 import { ARCH, terrainHeight } from "@/lib/plan";
 import { CEIL, FY, GY, PAV, ROOF, X0, X1, Z0, Z1, IX0, IX1, POOL, TERRACE } from "./MainEnvironment";
 
@@ -280,6 +287,8 @@ function OutdoorDining({ m }: { m: SceneMaterials }) {
 }
 
 export function TerraceFurniture({ m }: { m: SceneMaterials }) {
+  const potGeometry = useMemo(() => shrubGeometry(97, 0.6, 2), []);
+
   return (
     <group>
       <Lounger position={[12.6, FY + 0.03, 3.55]} rotation={0.04} m={m} />
@@ -304,9 +313,9 @@ export function TerraceFurniture({ m }: { m: SceneMaterials }) {
         <mesh position={[0, 0.65, 0]} material={m.soil}>
           <boxGeometry args={[0.44, 0.03, 0.44]} />
         </mesh>
-        <mesh position={[0, 1.05, 0]} material={m.foliage} castShadow>
-          <icosahedronGeometry args={[0.42, 2]} />
-        </mesh>
+        {/* a real shrub silhouette, not a sphere: same merged-blob builder the
+            landscape uses, scaled down for the pot */}
+        <mesh position={[0, 0.62, 0]} geometry={potGeometry} material={m.foliage} castShadow receiveShadow />
       </group>
     </group>
   );
@@ -356,6 +365,7 @@ export function SiteDetail({ m, quality }: { m: SceneMaterials; quality: "high" 
     return positions;
   }, [quality]);
 
+  const boulders = useMemo(() => [0, 1, 2].map((i) => rockGeometry(710 + i * 29, 1, 0.34)), []);
   const tuftGeometry = useMemo(() => {
     const a = new THREE.PlaneGeometry(0.85, 0.62);
     a.translate(0, 0.31, 0);
@@ -416,14 +426,13 @@ export function SiteDetail({ m, quality }: { m: SceneMaterials; quality: "high" 
       ].map(([x, h, z, s], i) => (
         <mesh
           key={i}
-          position={[x, terrainHeight(x, z) + h * 0.25, z]}
+          geometry={boulders[i]}
+          position={[x, terrainHeight(x, z) + h * 0.22, z]}
           rotation={[0.3 * i, i * 1.3, 0.12]}
-          scale={[s, s * 0.7, s * 0.85]}
+          scale={[s, s * 0.72, s * 0.88]}
           material={m.rock}
           receiveShadow
-        >
-          <icosahedronGeometry args={[1, 1]} />
-        </mesh>
+        />
       ))}
 
       {/* bronze downpipe at the pavilion corner */}

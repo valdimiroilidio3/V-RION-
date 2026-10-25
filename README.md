@@ -109,10 +109,11 @@ elementos técnicos (estado activo, contorno de selecção, focos).
 - Geometria combinada por material (paredes, lajes, pérgula, mobiliário, muro
   de pedra, detalhe de construção) para reduzir draw calls, mais *instancing*
   nos tufos de erva. Orçamento medido percorrendo a cena em cada perfil:
-  **baixo — 326 malhas / 63 614 triângulos**, **médio — 328 malhas /
-  68 378 triângulos**, **alto — 328 malhas / 72 462 triângulos**; geometrias
-  309–313, texturas 36–38, 10 luzes (sol + sombra, duas direccionais, céu/solo,
-  quatro interiores, uma submersa).
+  **baixo — 327 malhas / 69 990 triângulos**, **médio — 329 malhas /
+  74 754 triângulos**, **alto — 329 malhas / 78 838 triângulos**; geometrias
+  314–318, texturas 36–38, 11 luzes (sol com sombra, duas direccionais de
+  preenchimento, céu/solo, quatro interiores quentes, duas de luz do dia
+  interior, uma submersa na piscina).
 - `frameloop="never"` quando o separador está oculto; `AdaptiveDpr` activo.
 - Erros tratados: perda de contexto WebGL, falha na preparação de materiais,
   ecrã inteiro indisponível. Sem WebGL, é apresentada uma elevação desenhada e a
@@ -174,7 +175,15 @@ componentes React.
   externos nem CDN em runtime. Se o atelier fornecer um GLB real, o caminho de
   integração é `useGLTF` + `SceneCanvas`, mantendo o resto do sistema.
 - As texturas são procedurais (canvas), não fotografias digitalizadas: a
-  variação existe, mas não tem a riqueza de um scan PBR.
+  variação existe, mas não tem a riqueza de um scan PBR. O pavimento exterior
+  usa UV projectadas do espaço do mundo (uma unidade de textura = 2,6 m), para
+  que o travertino tenha a mesma escala na laje, no capeamento da piscina e no
+  terraço leste; as juntas de assentamento são geometria recessiva a cada
+  1,32 m, incluindo o recorte em volta da piscina.
+- O vidro é uma película muito leve (opacidade 0,055, clearcoat 0,4) em vez de
+  um espelho de ambiente: o vidro real é quase invisível de frente e só reflecte
+  em ângulo rasante, e a versão anterior lia-se como um véu leitoso sobre todo
+  o interior.
 - Reflexos em vidro e água usam o ambiente PMREM + `MeshPhysicalMaterial`; não
   há reflexão planar em tempo real. Foi implementada com `MeshReflectorMaterial`
   e removida: o segundo *pass* da cena, combinado com os materiais com *clipping*

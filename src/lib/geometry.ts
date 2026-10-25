@@ -28,6 +28,36 @@ export function boxGeometry(parts: BoxPart[]): THREE.BufferGeometry {
   return merged;
 }
 
+/**
+ * Re-project UVs from world space, choosing the projection plane per face from
+ * its dominant normal. Merged box sets otherwise inherit 0..1 UVs per box, so
+ * a 6 m slab and a 12 cm coping ending up with wildly different stone scale —
+ * which is exactly how procedural paving betrays itself. With world UVs one
+ * texture unit always equals `unit` metres.
+ */
+export function applyWorldUV(geometry: THREE.BufferGeometry, unit = 2.4) {
+  const position = geometry.getAttribute("position");
+  const normal = geometry.getAttribute("normal");
+  let uv = geometry.getAttribute("uv") as THREE.BufferAttribute | undefined;
+  if (!uv) {
+    uv = new THREE.BufferAttribute(new Float32Array(position.count * 2), 2);
+    geometry.setAttribute("uv", uv);
+  }
+  for (let i = 0; i < position.count; i++) {
+    const nx = Math.abs(normal.getX(i));
+    const ny = Math.abs(normal.getY(i));
+    const nz = Math.abs(normal.getZ(i));
+    const x = position.getX(i) / unit;
+    const y = position.getY(i) / unit;
+    const z = position.getZ(i) / unit;
+    if (ny >= nx && ny >= nz) uv.setXY(i, x, z);
+    else if (nx >= nz) uv.setXY(i, z, y);
+    else uv.setXY(i, x, y);
+  }
+  uv.needsUpdate = true;
+  return geometry;
+}
+
 export function mergeAll(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const merged = mergeGeometries(geos, false);
   geos.forEach((g) => g.dispose());
@@ -158,7 +188,36 @@ export function oliveTree(seed: number, height = 3.2, spread = 1.5, detail = 2) 
   };
 }
 
-export function shrubGeometry(seed: number, size = 0.7) {
+/**
+ * A rock, not a die: an icosahedron with per-vertex displacement along its own
+ * radius, then flat-shaded so the facets catch the sun as planes. Used for the
+ * scattered boulders and the sea stacks.
+ */
+export function rockGeometry(seed: number, detail = 1, roughness = 0.24) {
+  const geometry = new THREE.IcosahedronGeometry(1, detail);
+  const random = mulberry32(seed);
+  const position = geometry.getAttribute("position") as THREE.BufferAttribute;
+  const v = new THREE.Vector3();
+  const cache = new Map<string, number>();
+  for (let i = 0; i < position.count; i++) {
+    v.fromBufferAttribute(position, i);
+    const key = `${v.x.toFixed(3)}:${v.y.toFixed(3)}:${v.z.toFixed(3)}`;
+    let k = cache.get(key);
+    if (k === undefined) {
+      k = 1 + (random() - 0.5) * roughness * 2;
+      cache.set(key, k);
+    }
+    v.multiplyScalar(k);
+    // squash slightly so boulders sit rather than float
+    v.y *= 0.82;
+    position.setXYZ(i, v.x, v.y, v.z);
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+export function shrubGeometry(seed: number, size = 0.7, detail = 1) {
   const random = mulberry32(seed);
   const blobs: { p: Vec3; r: number }[] = [];
   for (let i = 0; i < 7; i++) {
@@ -171,5 +230,5 @@ export function shrubGeometry(seed: number, size = 0.7) {
       r: size * (0.32 + random() * 0.26),
     });
   }
-  return foliageGeometry(blobs, seed + 5, ["#414a30", "#7d8551"], 1);
+  return foliageGeometry(blobs, seed + 5, ["#414a30", "#7d8551"], detail);
 }

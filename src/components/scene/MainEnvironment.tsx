@@ -7,7 +7,7 @@ import type { SceneMaterials } from "@/lib/materials";
 import { REVEAL_PLANE } from "@/lib/materials";
 import { createRippleTexture } from "@/lib/textures";
 import type { Quality } from "@/lib/quality";
-import { boxGeometry, oliveTree, type BoxPart } from "@/lib/geometry";
+import { applyWorldUV, boxGeometry, oliveTree, type BoxPart } from "@/lib/geometry";
 import { Selectable } from "./Selectable";
 import { Interior } from "./SceneInterior";
 import { ArchitecturalDetail, SiteDetail, SoffitLighting, TerraceFurniture } from "./SceneDetail";
@@ -33,13 +33,20 @@ function PartMesh({
   material,
   castShadow = true,
   receiveShadow = true,
+  uvUnit,
 }: {
   parts: BoxPart[];
   material: THREE.Material;
   castShadow?: boolean;
   receiveShadow?: boolean;
+  /** when set, UVs are projected from world space at this metric scale */
+  uvUnit?: number;
 }) {
-  const geometry = useMemo(() => boxGeometry(parts), [parts]);
+  const geometry = useMemo(() => {
+    const merged = boxGeometry(parts);
+    if (uvUnit) applyWorldUV(merged, uvUnit);
+    return merged;
+  }, [parts, uvUnit]);
   return (
     <mesh
       geometry={geometry}
@@ -210,7 +217,7 @@ function Roof({ m }: { m: SceneMaterials }) {
   return (
     <group>
       <PartMesh parts={parts} material={m.concrete} />
-      <PartMesh parts={ballast} material={m.ballast} castShadow={false} />
+      <PartMesh parts={ballast} material={m.ballast} castShadow={false} uvUnit={0.85} />
       <PartMesh parts={coping} material={m.steel} castShadow={false} />
       <PartMesh parts={soffit} material={m.plaster} castShadow={false} />
     </group>
@@ -332,10 +339,57 @@ function Terrace({ m }: { m: SceneMaterials }) {
     [],
   );
 
+  /*
+   * Setting-out joints. Slabs are laid in a 1.32 m grid; the recessed joints
+   * are what give the deck a scale in the aerial view, where a single large
+   * plane of stone reads as nothing at all. Any line that would cross the pool
+   * is split around it, so no strip ever floats over the water.
+   */
+  const joints = useMemo<BoxPart[]>(() => {
+    const parts: BoxPart[] = [];
+    const step = 1.32;
+    const y = FY + 0.028;
+    const g = 0.026;
+    const zMin = TERRACE.z0;
+    const zMax = TERRACE.z1;
+    const xMin = TERRACE.x0;
+    const xMax = TERRACE.x1;
+
+    const pushZ = (x: number, z0: number, z1: number) => {
+      if (z1 - z0 < 0.08) return;
+      parts.push({ s: [g, 0.012, z1 - z0], p: [x, y, (z0 + z1) / 2] });
+    };
+    const pushX = (z: number, x0: number, x1: number) => {
+      if (x1 - x0 < 0.08) return;
+      parts.push({ s: [x1 - x0, 0.012, g], p: [(x0 + x1) / 2, y, z] });
+    };
+
+    for (let x = Math.ceil(xMin / step) * step; x < xMax; x += step) {
+      const overPool = x > POOL.x0 - 0.05 && x < POOL.x1 + 0.05;
+      if (overPool) {
+        pushZ(x, zMin, POOL.z0 - 0.05);
+        pushZ(x, POOL.z1 + 0.05, zMax);
+      } else pushZ(x, zMin, zMax);
+    }
+    for (let z = Math.ceil(zMin / step) * step; z < zMax; z += step) {
+      const overPool = z > POOL.z0 - 0.05 && z < POOL.z1 + 0.05;
+      if (overPool) {
+        pushX(z, xMin, POOL.x0 - 0.05);
+        pushX(z, POOL.x1 + 0.05, xMax);
+      } else pushX(z, xMin, xMax);
+    }
+    // east terrace
+    for (let x = 10.6; x < 16.9; x += step) pushZ(x, -0.4, 4.7);
+    for (let z = 0.2; z < 4.7; z += step) pushX(z, 10.4, 16.9);
+    return parts;
+  }, []);
+
   return (
     <group>
       <PartMesh parts={slab} material={m.concrete} />
-      <PartMesh parts={paving} material={m.terraceStone} />
+      {/* world-space UVs: one travertine field, one scale, coping included */}
+      <PartMesh parts={paving} material={m.terraceStone} uvUnit={2.6} />
+      <PartMesh parts={joints} material={m.joint} castShadow={false} />
     </group>
   );
 }

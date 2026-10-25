@@ -34,6 +34,7 @@ export interface SceneMaterials {
   concreteDark: THREE.MeshStandardMaterial;
   travertine: THREE.MeshStandardMaterial;
   terraceStone: THREE.MeshStandardMaterial;
+  joint: THREE.MeshStandardMaterial;
   plaster: THREE.MeshStandardMaterial;
   floorWood: THREE.MeshStandardMaterial;
   oak: THREE.MeshStandardMaterial;
@@ -60,7 +61,6 @@ export interface SceneMaterials {
   gravel: THREE.MeshStandardMaterial;
   ballast: THREE.MeshStandardMaterial;
   soil: THREE.MeshStandardMaterial;
-  sea: THREE.MeshStandardMaterial;
   rock: THREE.MeshStandardMaterial;
   glow: THREE.MeshStandardMaterial;
   lamp: THREE.MeshStandardMaterial;
@@ -90,7 +90,7 @@ export async function createMaterials(
   await tick(0.18);
 
   const travertine = travertineMaps(size, [2, 1], anisotropy);
-  const terraceStone = travertineMaps(size, [9, 3.4], anisotropy);
+  const terraceStone = travertineMaps(size, [1, 1], anisotropy);
   await tick(0.3);
 
   const floor = woodMaterialMaps(size, [4.5, 4.5], anisotropy, "floor");
@@ -110,7 +110,7 @@ export async function createMaterials(
         bumpMap: concrete.bumpMap,
         bumpScale: 1.6,
         roughnessMap: concrete.roughnessMap,
-        color: 0xb7b5ae,
+        color: 0xa9a7a1,
         roughness: 0.93,
         metalness: 0,
       }),
@@ -147,12 +147,14 @@ export async function createMaterials(
       std({
         map: terraceStone.map,
         bumpMap: terraceStone.bumpMap,
-        bumpScale: 0.3,
+        bumpScale: 0.22,
         color: 0xd3ccbd,
         roughness: 0.66,
       }),
     ),
-    plaster: clipped(std({ color: 0xdedacf, roughness: 0.96, envMapIntensity: 0.5 })),
+    // recessed setting-out joints: darker than the stone, almost no bump
+    joint: clipped(std({ color: 0x8b8477, roughness: 0.95, envMapIntensity: 0.4 })),
+    plaster: clipped(std({ color: 0xd2cec3, roughness: 0.96, envMapIntensity: 0.42 })),
     floorWood: clipped(
       std({
         map: floor.map,
@@ -189,21 +191,30 @@ export async function createMaterials(
     brass: clipped(
       std({ color: 0x9a7c4d, metalness: 0.95, roughness: 0.28, envMapIntensity: 1.2 }),
     ),
+    /*
+     * Glass is the hardest material to fake: a transparent sheet with a strong
+     * env map turns into a milky veil over everything behind it, which is
+     * exactly what a render looks like when nobody has checked it against a
+     * photograph. Real glazing is almost invisible face-on and only mirrors at
+     * grazing angles, so the film here is very light, slightly cold, and the
+     * reflection is carried by a modest clearcoat instead of a full
+     * environment mirror.
+     */
     glass: clipped(
       new THREE.MeshPhysicalMaterial({
-        color: 0xdfeaea,
+        color: 0x9fb4b2,
         metalness: 0,
-        roughness: 0.035,
+        roughness: 0.045,
         transmission: 0,
         transparent: true,
-        opacity: 0.085,
-        envMapIntensity: 1.55,
-        clearcoat: 1,
-        clearcoatRoughness: 0.02,
+        opacity: 0.055,
+        envMapIntensity: 0.85,
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.06,
         side: THREE.DoubleSide,
         depthWrite: false,
         ior: 1.52,
-        reflectivity: 0.55,
+        reflectivity: 0.6,
       }),
     ),
     glassRail: clipped(
@@ -287,13 +298,6 @@ export async function createMaterials(
       }),
     ),
     soil: std({ color: 0x4b463b, roughness: 1, envMapIntensity: 0.4 }),
-    sea: new THREE.MeshStandardMaterial({
-      color: 0x0d1a20,
-      roughness: 0.1,
-      metalness: 0.55,
-      envMapIntensity: 1.9,
-      fog: false,
-    }),
     rock: std({ color: 0x555049, roughness: 0.94, envMapIntensity: 0.5 }),
     glow: clipped(
       std({

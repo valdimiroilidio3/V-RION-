@@ -90,10 +90,20 @@ export function EnvironmentLighting({
         is deliberately short and the rest of the warmth comes from emissive
         geometry and the environment map.
       */}
-      <pointLight position={[6.1, 2.5, -0.7]} intensity={5.2} distance={8.5} decay={2} color="#ffab63" />
-      <pointLight position={[0.7, 2.45, -2.3]} intensity={3.6} distance={7} decay={2} color="#ffb877" />
-      <pointLight position={[13.3, 2.25, -3.3]} intensity={2.8} distance={6} decay={2} color="#ffb877" />
-      <pointLight position={[4.7, 2.2, 3.4]} intensity={1.6} distance={4.5} decay={2} color="#ffb877" />
+      <pointLight position={[6.1, 2.4, -0.7]} intensity={4.4} distance={7.5} decay={2} color="#ffab63" />
+      <pointLight position={[0.7, 2.4, -2.3]} intensity={3.1} distance={6.5} decay={2} color="#ffb877" />
+      <pointLight position={[13.3, 2.25, -3.3]} intensity={2.6} distance={5.5} decay={2} color="#ffb877" />
+
+      {/*
+        Daylight inside. The room would otherwise be lit only by its own
+        practicals, which turns every surface into the same warm gradient — no
+        value structure, nothing to read as architecture. These two cool fills
+        stand in for the sky bouncing off the terrace and through the 11 m of
+        glazing: cheap, unshadowed, and they give the warm fixtures something
+        to contrast with.
+      */}
+      <pointLight position={[3.2, 2.7, 2.2]} intensity={3.2} distance={9} decay={2} color="#c3d6e2" />
+      <pointLight position={[0.4, 2.6, -1.0]} intensity={1.9} distance={7} decay={2} color="#b9cfe0" />
     </group>
   );
 }

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import type { SceneMaterials } from "@/lib/materials";
-import { oliveTree, shrubGeometry, type Vec3 } from "@/lib/geometry";
+import { oliveTree, rockGeometry, shrubGeometry, type Vec3 } from "@/lib/geometry";
 import { createContactShadowTexture } from "@/lib/textures";
 import { Selectable } from "./Selectable";
 import { GY } from "./MainEnvironment";
@@ -170,7 +170,7 @@ function useCliffGeometry() {
 
 function Coast({ m }: { m: SceneMaterials }) {
   const cliff = useCliffGeometry();
-  const rockGeometry = useMemo(() => new THREE.DodecahedronGeometry(1, 0), []);
+  const rocksGeo = useMemo(() => [0, 1, 2, 3, 4, 5].map((i) => rockGeometry(300 + i * 17, 1, 0.3)), []);
   const rocks = useMemo(() => {
     const random = (seed: number) => {
       let s = seed;
@@ -201,7 +201,7 @@ function Coast({ m }: { m: SceneMaterials }) {
       {rocks.map((rock, i) => (
         <mesh
           key={i}
-          geometry={rockGeometry}
+          geometry={rocksGeo[i % rocksGeo.length]}
           material={m.rock}
           position={rock.p}
           rotation={[rock.r, rock.r * 1.7, rock.r * 0.6]}
@@ -210,7 +210,14 @@ function Coast({ m }: { m: SceneMaterials }) {
         />
       ))}
       {stacks.map((stack, i) => (
-        <mesh key={`s${i}`} geometry={rockGeometry} material={m.rock} position={stack.p} scale={stack.s} rotation={[0.2 * i, i, 0.1]} />
+        <mesh
+          key={`s${i}`}
+          geometry={rocksGeo[(i + 3) % rocksGeo.length]}
+          material={m.rock}
+          position={stack.p}
+          scale={stack.s}
+          rotation={[0.2 * i, i, 0.1]}
+        />
       ))}
       <Sea sunDirection={SUN_DIRECTION} />
     </group>
