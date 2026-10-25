@@ -42,6 +42,8 @@ export interface UIState {
   setCameraInfo: (distance: number, focal: number) => void;
   requestSkip: () => void;
   setError: (e: string | null) => void;
+  /** returns the store to its first-visit state (called when leaving /experiencia) */
+  resetUI: () => void;
 }
 
 /**
@@ -85,6 +87,24 @@ export const useUI = create<UIState>((set) => ({
   setCameraInfo: (cameraDistance, focalLength) => set({ cameraDistance, focalLength }),
   requestSkip: () => set({ skipRequested: true }),
   setError: (error) => set({ error }),
+  resetUI: () =>
+    set({
+      phase: "loading",
+      bootProgress: 0,
+      introReady: false,
+      selectedId: null,
+      viewId: "approach",
+      section: 0,
+      narrative: 0,
+      panelOpen: false,
+      pointerActive: false,
+      orbitUsed: false,
+      exploreMode: false,
+      skipRequested: false,
+      cameraDistance: 24,
+      focalLength: 33,
+      error: null,
+    }),
 }));
 
 export const uiStore = useUI;

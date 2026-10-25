@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useUI } from "@/lib/store";
 import type { ViewId } from "@/lib/store";
 import { VIEWS } from "@/lib/camera";
@@ -50,9 +51,10 @@ export function Chrome({
 
       <header className="topbar">
         <div className="brand">
-          <div className="brand__mark">
+          {/* the mark is the way back out of the experience */}
+          <Link className="brand__mark" href="/" aria-label="Voltar à página do projecto">
             V—RION <span>Atelier</span>
-          </div>
+          </Link>
           <div className="brand__rule" aria-hidden="true" />
           <div className="brand__meta">
             Casa Vértice · Costa Alentejana, PT

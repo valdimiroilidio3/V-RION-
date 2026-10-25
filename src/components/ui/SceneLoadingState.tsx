@@ -57,7 +57,7 @@ export function SceneLoadingState() {
 
       <div className="loader__bottom">
         <span>Visualização 3D interactiva · WebGL</span>
-        <span>Gérmen de Sousa · 2024</span>
+        <span>V-RION Atelier · 2024</span>
       </div>
     </div>
   );

@@ -46,6 +46,13 @@ export default function Site() {
     setWebgl(supportsWebGL());
   }, []);
 
+  /*
+   * Each visit to the experience starts from zero: the store is module-level, so
+   * returning here from the landing page would otherwise inherit the previous
+   * session's view, selection and intro flags.
+   */
+  useEffect(() => () => useUI.getState().resetUI(), []);
+
   useEffect(() => {
     const onFullscreenChange = () => {
       const active = Boolean(document.fullscreenElement);

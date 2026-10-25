@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useUI } from "@/lib/store";
@@ -194,6 +195,13 @@ export function Runway() {
               </svg>
               Ver implantação
             </button>
+            {/* the document and the scene are two pages: this is the way back */}
+            <Link className="ghost-button" href="/">
+              <svg viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M10 6H2M5.5 2.5L2 6l3.5 3.5" />
+              </svg>
+              Página do projecto
+            </Link>
           </div>
 
           <div className="colophon__foot">

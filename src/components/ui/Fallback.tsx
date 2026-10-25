@@ -1,6 +1,6 @@
 "use client";
 
-import { cameraBridge } from "@/lib/cameraBridge";
+import Link from "next/link";
 
 /**
  * Honest fallback: no WebGL means no 3D. We show the drawn elevation and the
@@ -51,12 +51,18 @@ export function SceneFallback() {
           Costa alentejana, Portugal · 2024
         </p>
 
-        <button type="button" className="ghost-button" onClick={() => cameraBridge.reset()}>
-          <svg viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M1 6a5 5 0 1 0 1.5-3.5M1 1v4h4" />
-          </svg>
-          Tentar novamente
-        </button>
+        {/* no scene is mounted here, so "try again" has to mean a real reload */}
+        <div className="fallback__actions">
+          <button type="button" className="ghost-button" onClick={() => window.location.reload()}>
+            <svg viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M1 6a5 5 0 1 0 1.5-3.5M1 1v4h4" />
+            </svg>
+            Tentar novamente
+          </button>
+          <Link className="ghost-button" href="/">
+            Voltar à página do projecto
+          </Link>
+        </div>
       </div>
     </main>
   );

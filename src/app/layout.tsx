@@ -8,7 +8,10 @@ import "@fontsource/inter/500.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Casa Vértice — V-RION Atelier",
+  title: {
+    default: "Casa Vértice — V-RION Atelier",
+    template: "%s",
+  },
   description:
     "Uma casa horizontal sobre a costa alentejana. Experiência arquitectónica tridimensional interactiva: betão aparente, vidro, carvalho e água.",
   openGraph: {

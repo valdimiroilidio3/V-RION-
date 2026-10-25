@@ -1,9 +1,18 @@
-# Casa Vértice — experiência 3D cinematográfica
+# Casa Vértice — V-RION Atelier
 
-Website de apresentação arquitectónica em que a cena tridimensional é o produto:
-uma casa horizontal sobre a costa alentejana, construída em tempo real com
-geometria própria, materiais PBR gerados no cliente e iluminação fisicamente
-coerente. Não há vídeo, não há renders estáticos, não há mockups.
+Website de apresentação arquitectónica em duas partes deliberadamente separadas:
+
+- **`/` — a página do projecto.** Documento editorial: enquadramento, ficha,
+  matéria, medidas e um pequeno painel 3D vivo que corre no próprio documento.
+- **`/experiencia` — a experiência 3D.** A cena completa, a ecrã inteiro, com
+  narrativa por scroll, vistas, órbita, selecção de elementos e leitura de
+  óptica. A cena é o produto: geometria própria, materiais PBR gerados no
+  cliente, iluminação fisicamente coerente. Não há vídeo nem renders estáticos.
+
+A separação é intencional: quem chega para ler o projecto lê-o em texto, sem
+esperar por um contexto WebGL; quem entra na experiência vê a cena sem
+competir com blocos de copy. As duas páginas estão ligadas nos dois sentidos
+(marca V—RION e "Abrir em 3D" / "Página do projecto").
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Three.js ·
 React Three Fiber · Drei · GSAP + ScrollTrigger · CSS modular (sem framework de
@@ -15,7 +24,8 @@ utilitários, para controlar tipografia e grelha ao pixel).
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+npm run dev      # http://localhost:3000        (página do projecto)
+                 # http://localhost:3000/experiencia  (cena 3D)
 npm run build && npm start
 npm run typecheck
 ```
@@ -35,6 +45,23 @@ Parâmetros de QA/presentação:
 
 ## 2. O que está efectivamente implementado
 
+### Página do projecto (`/`)
+
+- Hero tipográfico, ficha técnica, matéria (cinco materiais descritos com a
+  mesma paleta usada na cena), três medidas-chave e um capítulo final sobre a
+  experiência. Sem cartões, sem sombras decorativas, sem gradientes que fingem
+  profundidade.
+- **Painel 3D vivo** (`SceneTeaser`): uma janela não interactiva com a
+  geometria e os materiais reais, numa órbita lenta. Sem hotspots, sem chrome,
+  sem post-processing — o perfil do dispositivo é limitado a `medium` e o
+  canvas só arranca quando entra no ecrã (`IntersectionObserver`) e pára quando
+  o separador fica oculto.
+- Enquadramento calculado a partir dos dois limites reais (23 m de terraço na
+  horizontal, 11 m de casa e céu na vertical), para que a casa nunca apareça
+  cortada num ecrã estreito. Sem WebGL, mostra-se a elevação sul desenhada.
+- Em telemóvel o documento é pensado como documento: uma coluna, hierarquia
+  tipográfica, sem tentar comprimir a cena inteira num bloco.
+
 ### Cena
 
 - Arquitectura modelada em código com **geometria real e dimensões coerentes**
@@ -46,6 +73,10 @@ Parâmetros de QA/presentação:
   juntas, buracos de tirante e agregado; carvalho com tábuas, veio e nós;
   travertino com bandas e poros; gravilha; têxteis. Cada material tem
   rugosidade, `bumpMap` e intensidade de ambiente próprias.
+- **Elementos vivos:** a água da piscina desloca o campo de rugosidade/bump em
+  tempo de execução (movimento sem custo de geometria) e o shader do mar
+  avalia duas ondulações lentas por fragmento, que quebram o caminho do sol em
+  cintilação. Nada é reconstruído por frame.
 - **Iluminação:** sol baixo a oeste-sudoeste (luz principal com sombras suaves
   PCF), preenchimento frio do lado do mar, `hemisphereLight`, ambiente PMREM
   gerado a partir de um céu equirectangular desenhado no cliente e luzes

@@ -396,6 +396,23 @@ function Terrace({ m }: { m: SceneMaterials }) {
 
 function Pool({ m }: { m: SceneMaterials }) {
   const ripple = useMemo(() => createRippleTexture(), []);
+  const waterRef = useRef<THREE.MeshPhysicalMaterial>(null);
+
+  /*
+   * Still water is dead water. The ripple field is already tiling, so drifting
+   * its offset — and letting the bump do the work — gives the surface a slow,
+   * continuous movement for one texture fetch per frame and no geometry cost.
+   */
+  useFrame((state) => {
+    const water = waterRef.current;
+    if (!water) return;
+    const t = state.clock.elapsedTime;
+    if (water.bumpMap) {
+      water.bumpMap.offset.set(t * 0.006, t * 0.009);
+      water.roughnessMap = water.bumpMap;
+    }
+    water.bumpScale = 0.3 + Math.sin(t * 0.35) * 0.05;
+  });
 
   const basin = useMemo<BoxPart[]>(
     () => [
@@ -429,6 +446,7 @@ function Pool({ m }: { m: SceneMaterials }) {
           opaque sheet looked like a hole in the deck from the aerial view.
         */}
         <meshPhysicalMaterial
+          ref={waterRef}
           color={0x1d3b3d}
           transparent
           opacity={0.66}

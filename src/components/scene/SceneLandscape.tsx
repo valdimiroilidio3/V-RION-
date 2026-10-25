@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { SceneMaterials } from "@/lib/materials";
 import { oliveTree, rockGeometry, shrubGeometry, type Vec3 } from "@/lib/geometry";
@@ -248,6 +249,7 @@ const SEA_FRAG = /* glsl */ `
   uniform vec3 uFar;
   uniform vec3 uSun;
   uniform vec3 uSunColor;
+  uniform float uTime;
   void main() {
     vec3 view = cameraPosition - vWorld;
     float dist = length(view);
@@ -256,6 +258,13 @@ const SEA_FRAG = /* glsl */ `
     vec3 col = mix(uNear, uFar, t);
     vec3 N = vec3(0.0, 1.0, 0.0);
     vec3 H = normalize(normalize(uSun) + V);
+    /*
+     * A perfectly still normal gives a perfectly dry-looking sea. A pair of
+     * slow travelling swells, evaluated per fragment from world position, is
+     * enough to break the sun path into glitter — and it costs two sines.
+     */
+    float swell = sin(vWorld.x * 0.35 + uTime * 0.9) * 0.5 + sin(vWorld.z * 0.21 - uTime * 0.6) * 0.5;
+    N = normalize(vec3(swell * 0.035, 1.0, cos(vWorld.x * 0.27 + uTime * 0.7) * 0.03));
     float spec = pow(max(dot(N, H), 0.0), 260.0);
     float sheen = pow(max(dot(N, H), 0.0), 18.0);
     col += uSunColor * (spec * 1.15 + sheen * 0.09) * (1.0 - t * 0.55);
@@ -277,10 +286,15 @@ function Sea({ sunDirection }: { sunDirection: Vec3 }) {
           uFar: { value: new THREE.Color("#b3ac9c") },
           uSun: { value: new THREE.Vector3(...sunDirection) },
           uSunColor: { value: new THREE.Color("#ffd7a8") },
+          uTime: { value: 0 },
         },
       }),
     [sunDirection],
   );
+
+  useFrame((state) => {
+    material.uniforms.uTime.value = state.clock.elapsedTime;
+  });
 
   return (
     <mesh rotation-x={-Math.PI / 2} position={[0, -27, -240]} material={material} frustumCulled={false}>
